@@ -67,7 +67,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         if (string.IsNullOrEmpty(CopyAddress))
         {
             MessageBox.Show("File Path is not correct", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            return;
+            return; 
         }
         if (!(Password is int a)) return;
         var text = File.ReadAllText(CopyAddress);
