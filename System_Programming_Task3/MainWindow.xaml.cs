@@ -64,29 +64,45 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 
     private void StartButton_Click(object sender, RoutedEventArgs e)
     {
-        if (string.IsNullOrEmpty(CopyAddress))
+        try
         {
-            MessageBox.Show("File Path is not correct", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            return; 
-        }
-        if (!(Password is int a)) return;
-        var text = File.ReadAllText(CopyAddress);
-        defaultText = text;
-        FileSize = text.Length;
-        ProgressValue = 0;
-        new Thread(() =>
-        {
-            var temp = text.ToCharArray();
-            for (int i = 0; i < text.Length; i++)
+            if (string.IsNullOrEmpty(CopyAddress))
             {
-                if (cancel) break;
-                temp[i] = (char)(temp[i] ^ a);
-                File.WriteAllText(CopyAddress, new string(temp));
-                ProgressValue = i + 1;
-                Percentage = (int)(ProgressValue * 100 / FileSize);
-                Thread.Sleep(10);
+                MessageBox.Show("File Path is not correct", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
             }
-        }).Start();
-        cancel = false;
+            if (!(Password is int a)) return;
+            var text = File.ReadAllText(CopyAddress);
+            defaultText = text;
+            FileSize = text.Length;
+            ProgressValue = 0;
+            ThreadPool.QueueUserWorkItem(_ =>
+            {
+                var temp = text.ToCharArray();
+                for (int i = 0; i < text.Length; i++)
+                {
+                    if (cancel) break;
+                    temp[i] = (char)(temp[i] ^ a);
+                    File.WriteAllText(CopyAddress, new string(temp));
+                    ProgressValue = i + 1;
+                    Percentage = (int)(ProgressValue * 100 / FileSize);
+                    Thread.Sleep(10);
+                }
+            });
+        }
+        catch
+        {
+            cancel = true;
+            if (ProgressValue > 0 && Percentage < 100)
+            {
+                File.WriteAllText(CopyAddress, defaultText);
+                Percentage = 0;
+                ProgressValue = 0;
+            }
+        }
+        finally
+        {
+            cancel = false;
+        }
     }
 }
